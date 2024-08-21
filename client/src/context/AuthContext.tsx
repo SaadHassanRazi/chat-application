@@ -1,7 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import axios, { AxiosResponse } from "axios";
 import { createContext, ReactNode, useContext } from "react";
-type AuthContext = {};
+type AuthContext = {
+  signup: UseMutationResult<AxiosResponse, unknown, User>;
+};
 type User = {
   id: string;
   name: string;
@@ -9,7 +11,7 @@ type User = {
 };
 const Context = createContext<AuthContext | null>(null);
 const useAuth = () => {
-  return useContext(Context);
+  return useContext(Context) as AuthContext;
 };
 
 type AuthProviderProps = {
@@ -21,5 +23,7 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
       return axios.post(`${import.meta.env.VITE_SERVER_URL}/signup`, user);
     },
   });
-  return <Context.Provider value={{}}>{children}</Context.Provider>;
+  return <Context.Provider value={{ signup }}>{children}</Context.Provider>;
 };
+
+export { useAuth, AuthProvider };
