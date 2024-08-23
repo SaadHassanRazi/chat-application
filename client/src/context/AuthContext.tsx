@@ -9,12 +9,14 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { StreamChat } from "stream-chat";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 type AuthContext = {
   user?: User;
   streamChat?: StreamChat;
   signup: UseMutationResult<AxiosResponse, unknown, User>;
 
   login: UseMutationResult<{ token: string; user: User }, unknown, string>;
+  logout: UseMutationResult<AxiosResponse, unknown, void>;
 };
 type User = {
   id: string;
@@ -25,14 +27,17 @@ const Context = createContext<AuthContext | null>(null);
 const useAuth = () => {
   return useContext(Context) as AuthContext;
 };
-
+const useLoggedInAuth = () => {
+  return useContext(Context) as AuthContext &
+    Required<Pick<AuthContext, "user">>;
+};
 type AuthProviderProps = {
   children: ReactNode;
 };
 const AuthProvider = ({ children }: AuthProviderProps) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User>();
-  const [token, setToken] = useState<string>();
+  const [user, setUser] = useLocalStorage<User>("user");
+  const [token, setToken] = useLocalStorage<string>("token");
   const [streamChat, setStreamChat] = useState<StreamChat>();
   const signup = useMutation({
     mutationFn: (user: User) => {
@@ -56,6 +61,18 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     },
   });
 
+  const logout = useMutation({
+    mutationFn: () => {
+      return axios.post(`${import.meta.env.VITE_SERVER_URL}/logout`, { token });
+    },
+    onSuccess() {
+      setUser(undefined);
+
+      setToken(undefined);
+
+      setStreamChat(undefined);
+    },
+  });
   useEffect(() => {
     if (token == null || user == null) return;
     const chat = new StreamChat(import.meta.env.VITE_STREAM_API_KEY!);
@@ -76,10 +93,10 @@ const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, [token, user]);
   return (
-    <Context.Provider value={{ signup, login, user, streamChat }}>
+    <Context.Provider value={{ signup, login, user, streamChat, logout }}>
       {children}
     </Context.Provider>
   );
 };
 
-export { useAuth, AuthProvider };
+export { useAuth, AuthProvider, useLoggedInAuth };
