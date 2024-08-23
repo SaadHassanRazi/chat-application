@@ -1,7 +1,11 @@
 import FullScreenCard from "../../components/FullScreenCard";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
+import Link from "../../components/Link";
 
 const AuthLayout = () => {
+  const location = useLocation();
+  const isLoginPage = location.pathname === "/login";
+
   return (
     <div>
       <FullScreenCard>
@@ -9,7 +13,9 @@ const AuthLayout = () => {
           <Outlet />
         </FullScreenCard.Body>
         <FullScreenCard.BelowCard>
-          <h1>HI</h1>
+          <Link to={isLoginPage ? "/signup" : "/login"}>
+            {isLoginPage ? "Create Account" : "Login"}
+          </Link>
         </FullScreenCard.BelowCard>
       </FullScreenCard>
     </div>
